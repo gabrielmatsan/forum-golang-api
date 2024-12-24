@@ -5,17 +5,15 @@ import (
 	"time"
 
 	"github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
-	. "github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
-
-	. "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/enterprise/models/value-object"
+	valueobject "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/enterprise/models/value-object"
 )
 
 type QuestionProps struct {
-	authorID     *UniqueEntityID
-	bestAnswerID *UniqueEntityID
+	authorID     *entities.UniqueEntityID 
+	bestAnswerID *entities.UniqueEntityID
 	Title        string
 	Content      string
-	Slug         *Slug
+	Slug         *valueobject.Slug
 	CreatedAt    time.Time
 	UpdateAt     *time.Time
 }
@@ -24,9 +22,15 @@ type Question struct {
 	*entities.Entity[QuestionProps]
 }
 
-func NewQuestion(props QuestionProps, id ...*UniqueEntityID) *Question {
+func NewQuestion(props QuestionProps, id ...*entities.UniqueEntityID) *Question {
+	var entityID *entities.UniqueEntityID
+	if len(id) > 0 {
+		entityID = id[0]
+	} else {
+		entityID = entities.NewUniqueEntityID()
+	}
 	return &Question{
-		Entity: NewEntity(props, id...),
+		Entity: entities.NewEntity(props, entityID),
 	}
 }
 
@@ -81,7 +85,7 @@ func (q *Question) SetContent(content string) {
 	q.touch()
 }
 
-func (q *Question) SetBestAnswerID(newBestAnswerID *UniqueEntityID) {
+func (q *Question) SetBestAnswerID(newBestAnswerID *entities.UniqueEntityID) {
 	if newBestAnswerID != nil && !newBestAnswerID.Equals(q.Props().bestAnswerID) {
 		// TODO: Adiciona o evento de notificação
 	}
