@@ -1,6 +1,8 @@
 package models
 
-import "github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
+import (
+	"github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
+)
 
 type StudentProps struct {
 	Name     string

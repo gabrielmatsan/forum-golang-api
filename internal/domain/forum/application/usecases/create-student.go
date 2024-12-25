@@ -16,7 +16,7 @@ type RegisterStudentRequest struct {
 }
 
 // Resposta do caso de uso: ou um erro ou o estudante criado
-type RegisterStudentResponse = entities.Either[*usecaseserror.EmailAlreadyUsed, *models.Student]
+type RegisterStudentResponse = entities.Either[*usecaseserror.UseCaseError, *models.Student]
 
 type CreateStudentUseCase struct {
 	studentRepository repositories.StudentsRepository
@@ -32,13 +32,20 @@ func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudent
 	existingStudent, _ := uc.studentRepository.FindByEmail(ctx, req.Email)
 
 	if existingStudent != nil {
-		// Use apenas um único * para o tipo no Left e Right
-		return entities.Left[*usecaseserror.EmailAlreadyUsed, *models.Student](
+		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
 			usecaseserror.NewEmailAlreadyUsedError(req.Email),
 		)
 	}
 
-	// Caso contrário, continue com a lógica para criar um novo estudante
+	if len(req.Password) < 6 {
+		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
+			usecaseserror.NewWeakPasswordError(),
+		)
+	}
+
+	// Validar o email
+	
+
 	newStudent := models.NewStudent(models.StudentProps{
 		Name:     req.Name,
 		Email:    req.Email,
@@ -47,7 +54,7 @@ func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudent
 
 	uc.studentRepository.CreateStudent(ctx, newStudent)
 
-	return entities.Right[*usecaseserror.EmailAlreadyUsed, *models.Student](
+	return entities.Right[*usecaseserror.UseCaseError, *models.Student](
 		newStudent,
 	)
 }
