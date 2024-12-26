@@ -41,3 +41,10 @@ func NewInvalidEmailError(email string) *UseCaseError {
 		Message: fmt.Sprintf("Email \"%s\" is invalid", email),
 	}
 }
+
+func NewInternalError() *UseCaseError {
+	return &UseCaseError{
+		Code:    "INTERNAL_ERROR",
+		Message: "An internal error occurred",
+	}
+}

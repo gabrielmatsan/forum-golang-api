@@ -51,3 +51,16 @@ func (r *InMemoryStudentsRepository) FindById(ctx context.Context, id string) (*
 
 	return nil, nil
 }
+
+func (r *InMemoryStudentsRepository) UpdateStudent(ctx context.Context, student *models.Student) error {
+	r.Mu.Lock()
+	defer r.Mu.Unlock()
+
+	for i, s := range r.Students {
+		if s.GetID() == student.GetID() {
+			r.Students[i] = student
+			return nil
+		}
+	}
+	return nil
+}

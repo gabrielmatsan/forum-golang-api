@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setup() (*inmemoryrepositories.InMemoryStudentsRepository, *usecases.CreateStudentUseCase) {
+func setupCreateStudentTest() (*inmemoryrepositories.InMemoryStudentsRepository, *usecases.CreateStudentUseCase) {
 	studenteRepo := inmemoryrepositories.NewInMemoryStudentsRepository()
 	useCase := usecases.NewRegisterStudentUseCase(studenteRepo)
 	return studenteRepo, useCase
@@ -24,7 +24,7 @@ func TestCreateStudentUseCase(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("should be able to register a new student", func(t *testing.T) {
-		_, useCase := setup()
+		_, useCase := setupCreateStudentTest()
 
 		request := usecases.RegisterStudentRequest{
 			Name:     "Gabriel",
@@ -50,7 +50,7 @@ func TestCreateStudentUseCase(t *testing.T) {
 
 	t.Run("should not be able to register a student with an email already in use", func(t *testing.T) {
 
-		studenteRepo, useCase := setup()
+		studenteRepo, useCase := setupCreateStudentTest()
 		request := usecases.RegisterStudentRequest{
 			Name:     "Gabriel",
 			Email:    "gabriel@ro.com",
@@ -76,7 +76,7 @@ func TestCreateStudentUseCase(t *testing.T) {
 	})
 
 	t.Run("should not be able to register a student with a weak password", func(t *testing.T) {
-		_, useCase := setup()
+		_, useCase := setupCreateStudentTest()
 		request := usecases.RegisterStudentRequest{
 			Name:     "Gabriel",
 			Email:    "gabriel@ht.com",

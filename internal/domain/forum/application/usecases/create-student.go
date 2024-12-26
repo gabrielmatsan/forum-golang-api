@@ -10,9 +10,9 @@ import (
 )
 
 type RegisterStudentRequest struct {
-	Name     string
-	Email    string
-	Password string
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 // Resposta do caso de uso: ou um erro ou o estudante criado
@@ -44,7 +44,6 @@ func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudent
 	}
 
 	// Validar o email
-	
 
 	newStudent := models.NewStudent(models.StudentProps{
 		Name:     req.Name,

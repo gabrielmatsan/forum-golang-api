@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"context"
+
 	"github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/repositories"
 	usecaseserror "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/use-cases-error"
@@ -8,10 +10,10 @@ import (
 )
 
 type EditStudentRequest struct {
-	ID       string
-	Name     string
-	Email    string
-	Password string
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type EditStudentResponse = entities.Either[*usecaseserror.UseCaseError, *models.Student]
@@ -26,14 +28,40 @@ func NewEditStudenUseCase(studentRepository repositories.StudentsRepository) *Ed
 	}
 }
 
-// func (uc *EditStudentUseCase) Execute(ctx context.Context, req EditStudentRequest) EditStudentResponse {
-// 	student, _ := uc.studentRepository.FindById(ctx, req.ID)
+func (uc *EditStudentUseCase) Execute(ctx context.Context, req EditStudentRequest) EditStudentResponse {
+	student, _ := uc.studentRepository.FindById(ctx, req.ID)
 
-// 	if student == nil {
-// 		// Retorna um erro de recurso não encontrado
-// 		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
-// 			usecaseserror.ResourceNotFoundError("Student", req.ID),
-// 		)
-// 	}
+	if student == nil {
+		// Retorna um erro de recurso não encontrado
+		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
+			usecaseserror.ResourceNotFoundError("Student", req.ID),
+		)
+	}
 
-// }
+	// Valida e atualiza o email, se fornecido
+	if req.Email != student.GetEmail() {
+		existingStudent, _ := uc.studentRepository.FindByEmail(ctx, req.Email)
+		if existingStudent != nil {
+			return entities.Left[*usecaseserror.UseCaseError, *models.Student](
+				usecaseserror.NewEmailAlreadyUsedError(req.Email),
+			)
+		}
+
+		student.SetEmail(req.Email)
+	}
+
+	// Valida e atualiza a senha, se fornecida
+	if len(req.Password) >= 6 {
+		student.SetPassword(req.Password)
+	}
+
+	// Salva as alterações no repositório
+	if err := uc.studentRepository.UpdateStudent(ctx, student); err != nil {
+		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
+			usecaseserror.NewInternalError(),
+		)
+	}
+
+	// Retorna o estudante atualizado
+	return entities.Right[*usecaseserror.UseCaseError, *models.Student](student)
+}

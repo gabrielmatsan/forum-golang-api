@@ -36,3 +36,11 @@ func (s *Student) GetPassword() string {
 func (s *Student) GetID() string {
 	return s.ID().ToString()
 }
+
+func (s *Student) SetEmail(email string) {
+	s.Props().Email = email
+}
+
+func (s *Student) SetPassword(password string) {
+	s.Props().Password = password
+}
