@@ -28,19 +28,19 @@ func NewRegisterStudentUseCase(studentRepository repositories.StudentsRepository
 	}
 }
 
-func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudentRequest) RegisterStudentResponse {
-	existingStudent, _ := uc.studentRepository.FindByEmail(ctx, req.Email)
+func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudentRequest) error {
+	existingStudent, err := uc.studentRepository.FindByEmail(ctx, req.Email)
+
+	if err != nil {
+		return nil
+	}
 
 	if existingStudent != nil {
-		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
-			usecaseserror.NewEmailAlreadyUsedError(req.Email),
-		)
+		return usecaseserror.NewEmailAlreadyUsedError(req.Email)
 	}
 
 	if len(req.Password) < 6 {
-		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
-			usecaseserror.NewWeakPasswordError(),
-		)
+		return usecaseserror.NewWeakPasswordError()
 	}
 
 	// Validar o email
@@ -53,7 +53,5 @@ func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudent
 
 	uc.studentRepository.CreateStudent(ctx, newStudent)
 
-	return entities.Right[*usecaseserror.UseCaseError, *models.Student](
-		newStudent,
-	)
+	return nil
 }

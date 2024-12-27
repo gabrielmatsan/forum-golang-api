@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	usecaseserror "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/use-cases-error"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/usecases"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/enterprise/models"
 	inmemoryrepositories "github.com/gabrielmatsan/forum-golang-api/utils/in-memory-repositories"
@@ -35,19 +36,50 @@ func TestEditStudentUseCase(t *testing.T) {
 			ID:       student.GetID(),
 			Name:     "Gabriel",
 			Email:    "gabriel@el.com",
+			Password: "gabriel123",
+		}
+
+		err := useCase.Execute(ctx, request)
+		assert.NoError(t, err)
+
+		studenteRepo.Mu.Lock()
+		defer studenteRepo.Mu.Unlock()
+
+		assert.Equal(t, 1, len(studenteRepo.Students))
+		s := studenteRepo.Students[0]
+		assert.Equal(t, s.GetEmail(), request.Email)
+		assert.Equal(t, s.GetPassword(), request.Password)
+	})
+
+	t.Run("should not be able to edit email to an already used email", func(t *testing.T) {
+		studenteRepo, useCase := setupEditStudentTest()
+
+		student1 := models.NewStudent(models.StudentProps{
+			Name:     "Gabriel",
+			Email:    "gabriel@hot.com",
+			Password: "123456",
+		})
+
+		studenteRepo.CreateStudent(ctx, student1)
+
+		student2 := models.NewStudent(models.StudentProps{
+			Name:     "John Doe",
+			Email:    "johndoe@example.com",
+			Password: "123456",
+		})
+
+		studenteRepo.CreateStudent(ctx, student2)
+
+		request := usecases.EditStudentRequest{
+			ID:       student1.GetID(),
+			Name:     "Gabriel",
+			Email:    "johndoe@example.com",
 			Password: "123456",
 		}
 
-		response := useCase.Execute(ctx, request)
+		err := useCase.Execute(ctx, request)
 
-		assert.True(t, response.IsRight())
-
-		responseValue, err := response.RightValue()
-
-		if err != nil {
-			return
-		}
-		assert.Equal(t, (*responseValue).GetEmail(), "gabriel@el.com")
+		assert.Error(t, err)
+		assert.IsType(t, usecaseserror.NewEmailAlreadyUsedError(request.Email), err)
 	})
-
 }

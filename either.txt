@@ -3,8 +3,10 @@ package usecases
 import (
 	"context"
 
+	"github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/repositories"
 	usecaseserror "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/use-cases-error"
+	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/enterprise/models"
 )
 
 type EditStudentRequest struct {
@@ -13,6 +15,8 @@ type EditStudentRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type EditStudentResponse = entities.Either[*usecaseserror.UseCaseError, *models.Student]
 
 type EditStudentUseCase struct {
 	studentRepository repositories.StudentsRepository
@@ -24,38 +28,42 @@ func NewEditStudenUseCase(studentRepository repositories.StudentsRepository) *Ed
 	}
 }
 
-func (uc *EditStudentUseCase) Execute(ctx context.Context, req EditStudentRequest) error {
+func (uc *EditStudentUseCase) Execute(ctx context.Context, req EditStudentRequest) EditStudentResponse {
 	student, _ := uc.studentRepository.FindById(ctx, req.ID)
 
 	if student == nil {
-		return usecaseserror.ResourceNotFoundError("Student", req.ID)
+		// Retorna um erro de recurso não encontrado
+		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
+			usecaseserror.ResourceNotFoundError("Student", req.ID),
+		)
 	}
 
 	// Valida e atualiza o email, se fornecido
 	if req.Email != student.GetEmail() {
-		existingStudent, err := uc.studentRepository.FindByEmail(ctx, req.Email)
-
-		if err != nil {
-			return usecaseserror.NewInternalError()
-		}
-
+		existingStudent, _ := uc.studentRepository.FindByEmail(ctx, req.Email)
 		if existingStudent != nil {
-			return usecaseserror.NewEmailAlreadyUsedError(req.Email)
+			return entities.Left[*usecaseserror.UseCaseError, *models.Student](
+				usecaseserror.NewEmailAlreadyUsedError(req.Email),
+			)
 		}
+
 		student.SetEmail(req.Email)
 	}
 
 	// Valida e atualiza a senha, se fornecida
-	if len(req.Password) < 6 {
-		return usecaseserror.NewWeakPasswordError()
+	if len(req.Password) >= 6 {
+		student.SetPassword(req.Password)
 	}
-
-	student.SetPassword(req.Password)
 
 	// Salva as alterações no repositório
 	if err := uc.studentRepository.UpdateStudent(ctx, student); err != nil {
-		return usecaseserror.NewInternalError()
+		return entities.Left[*usecaseserror.UseCaseError, *models.Student](
+			usecaseserror.NewInternalError(),
+		)
 	}
 
-	return nil
+	// Retorna o estudante atualizado
+	return entities.Right[*usecaseserror.UseCaseError, *models.Student](student)
 }
+
+exemplo de uso do right and left em golang

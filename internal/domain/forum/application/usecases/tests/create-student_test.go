@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	usecaseserror "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/use-cases-error"
@@ -24,7 +23,7 @@ func TestCreateStudentUseCase(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("should be able to register a new student", func(t *testing.T) {
-		_, useCase := setupCreateStudentTest()
+		studentRepo, useCase := setupCreateStudentTest()
 
 		request := usecases.RegisterStudentRequest{
 			Name:     "Gabriel",
@@ -32,14 +31,14 @@ func TestCreateStudentUseCase(t *testing.T) {
 			Password: "123456",
 		}
 
-		response := useCase.Execute(ctx, request)
+		err := useCase.Execute(ctx, request)
+		assert.NoError(t, err)
 
-		assert.True(t, response.IsRight())
+		studentRepo.Mu.Lock()
+		defer studentRepo.Mu.Unlock()
 
-		// Captura o estudante e trata o erro
-		student, err := response.RightValue()
-		assert.NoError(t, err)    // Garante que não houve erro
-		assert.NotNil(t, student) // Verifica que o estudante não é nulo
+		assert.Equal(t, 1, len(studentRepo.Students)) // Verifica se um estudante foi salvo
+		student := studentRepo.Students[0]
 
 		assert.Equal(t, request.Name, (*student).GetName()) // Compara os valores
 		assert.Equal(t, request.Email, (*student).GetEmail())
@@ -58,17 +57,12 @@ func TestCreateStudentUseCase(t *testing.T) {
 		}
 		response := useCase.Execute(ctx, request)
 
-		assert.True(t, response.IsRight())
+		assert.NoError(t, response)
 
-		request = usecases.RegisterStudentRequest{
-			Name:     "Hoalnf",
-			Email:    "gabriel@ro.com",
-			Password: "123456",
-		}
-
-		response = useCase.Execute(ctx, request)
-		assert.True(t, response.IsLeft())
-
+		// Tenta registrar o mesmo estudante
+		err := useCase.Execute(ctx, request)
+		assert.Error(t, err)
+		assert.IsType(t, usecaseserror.NewEmailAlreadyUsedError(request.Email), err)
 		studenteRepo.Mu.Lock()
 		defer studenteRepo.Mu.Unlock()
 
@@ -80,27 +74,19 @@ func TestCreateStudentUseCase(t *testing.T) {
 		request := usecases.RegisterStudentRequest{
 			Name:     "Gabriel",
 			Email:    "gabriel@ht.com",
-			Password: "123",
+			Password: "123", //Weak password
 		}
 
-		response := useCase.Execute(ctx, request)
+		err := useCase.Execute(ctx, request)
 
-		assert.True(t, response.IsLeft())
+		assert.Error(t, err)
+		assert.IsType(t, usecaseserror.NewWeakPasswordError(), err)
 
-		// Verifica o erro retornado
-		errorValue, err := response.LeftValue()
-		assert.NoError(t, err)
-
-		if errorValue != nil {
-			// Imprime o erro no log do teste
-			t.Logf("Erro retornado: Code=%s, Message=%s", (*errorValue).Code, (*errorValue).Message)
-
-			// Ou usando fmt.Println, se quiser saída direta no terminal
-			fmt.Printf("Erro retornado: Code=%s, Message=%s\n", (*errorValue).Code, (*errorValue).Message)
-
-			// Valida o código e mensagem do erro
-			assert.Equal(t, usecaseserror.NewWeakPasswordError().Code, (*errorValue).Code)
-			assert.Equal(t, usecaseserror.NewWeakPasswordError().Message, (*errorValue).Message)
+		if err != nil {
+			// Valida que é o erro correto
+			useCaseError := err.(*usecaseserror.UseCaseError)
+			assert.Equal(t, "WEAK_PASSWORD", useCaseError.Code)
+			assert.Equal(t, "Password is too weak", useCaseError.Message)
 		}
 	})
 }

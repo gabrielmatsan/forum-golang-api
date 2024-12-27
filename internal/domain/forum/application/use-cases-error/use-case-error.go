@@ -7,6 +7,10 @@ type UseCaseError struct {
 	Message string
 }
 
+func (e *UseCaseError) Error() string {
+	return e.Message
+}
+
 func NewEmailAlreadyUsedError(email string) *UseCaseError {
 	return &UseCaseError{
 		Code:    "EMAIL_ALREADY_USED",
