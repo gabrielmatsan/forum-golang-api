@@ -1,4 +1,4 @@
-package terndotenv
+package main
 
 import (
 	"fmt"
