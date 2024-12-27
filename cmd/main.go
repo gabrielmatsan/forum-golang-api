@@ -1,21 +1,23 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"log"
+	"time"
 
-	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/enterprise/models"
+	"github.com/gabrielmatsan/forum-golang-api/config"
 )
 
 func main() {
-	student := models.NewStudent(models.StudentProps{
-		Name:     "Gabriel",
-		Email:    "gabrielmatsan@hotmail.com",
-		Password: "123456",
-	})
 
-	fmt.Println(student.GetID())
-	fmt.Println(student.GetName())
-	fmt.Println(student.GetEmail())
-	fmt.Println(student.GetPassword())
-	fmt.Println(student.ID().ToString())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	conn, err := config.ConnectDB(ctx)
+
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	defer conn.Close()
 }
