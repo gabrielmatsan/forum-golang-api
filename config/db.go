@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/joho/godotenv"
 )
 
@@ -21,7 +23,7 @@ func ConnectDB(ctx context.Context) (*sql.DB, error) {
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		os.Getenv("POSTGRES_USER"),
 		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRESD_HOST"),
+		os.Getenv("POSTGRES_HOST"),
 		os.Getenv("POSTGRES_PORT"),
 		os.Getenv("POSTGRES_DB"),
 	)
@@ -29,7 +31,7 @@ func ConnectDB(ctx context.Context) (*sql.DB, error) {
 	db, err := sql.Open("pgx", dsn)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database")
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	if err := db.PingContext(ctx); err != nil {

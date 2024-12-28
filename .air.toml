@@ -1,0 +1,13 @@
+# Configuração do Air
+root = "."                          # Diretório raiz do projeto
+tmp_dir = "./tmp"                    # Diretório temporário usado pelo Air
+
+[build]
+cmd = "go build -o ./bin/api ./cmd/api"  # Comando para build
+bin = "./bin/api"                       # Caminho do binário gerado
+full_reload = false                     # Define se um reload completo deve ocorrer
+include_ext = ["go", "tpl", "tmpl"]     # Extensões de arquivos a serem monitoradas
+exclude_dir = ["vendor", "bin"]         # Diretórios a serem ignorados
+
+[log]
+level = "debug"                         # Nível de log (debug, info, warn, error)
