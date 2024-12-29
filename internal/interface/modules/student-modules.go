@@ -11,14 +11,14 @@ type StudentsModule struct {
 	CreateStudentController *dto.CreateStudentController
 }
 
-func NewStudentsModule(db *sqlc.Queries) *StudentsModule {
-	// Inicializa o repositório SQLC
+func NewStudentsModule(db *sqlc.Queries, cryptoModule *CryptographyModule) *StudentsModule {
+	// Repositories
 	studentRepo := repositories.NewSQLCStudentsRepository(db)
 
-	// Inicializa o caso de uso
-	createStudentUseCase := usecases.NewRegisterStudentUseCase(studentRepo)
+	// UseCases
+	createStudentUseCase := usecases.NewRegisterStudentUseCase(studentRepo, cryptoModule.Hasher)
 
-	// Inicializa o controlador
+	// Controllers
 	createStudentController := dto.NewCreateStudentController(createStudentUseCase)
 
 	return &StudentsModule{

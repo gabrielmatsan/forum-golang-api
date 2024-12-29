@@ -14,6 +14,7 @@ import (
 
 func main() {
 
+	// Database connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -24,16 +25,18 @@ func main() {
 	}
 
 	defer conn.Close()
-
 	db := pgstore.New(conn)
 
 	// Modulos
-	studentModule := modules.NewStudentsModule(db)
+	cryptoModule := modules.NewCryptographyModule()
+	studentModule := modules.NewStudentsModule(db, cryptoModule)
 
-	r := gin.Default() // Cria uma instância padrão do Gin
+	// API Config
+	r := gin.Default()
 
 	routes.RegisterStudentsRoutes(r, studentModule.CreateStudentController)
 
+	// Endpoint Test (JUST IN DEVELOPMENT)
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",

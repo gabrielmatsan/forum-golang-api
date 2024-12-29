@@ -10,6 +10,7 @@ import (
 	"github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/repositories"
 	usecaseserror "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/use-cases-error"
+	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/criptography"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/enterprise/models"
 )
 
@@ -24,11 +25,13 @@ type RegisterStudentResponse = entities.Either[*usecaseserror.UseCaseError, *mod
 
 type CreateStudentUseCase struct {
 	studentRepository repositories.StudentsRepository
+	hashGenerator     criptography.HashGenerator
 }
 
-func NewRegisterStudentUseCase(studentRepository repositories.StudentsRepository) *CreateStudentUseCase {
+func NewRegisterStudentUseCase(studentRepository repositories.StudentsRepository, hashGenerator criptography.HashGenerator) *CreateStudentUseCase {
 	return &CreateStudentUseCase{
 		studentRepository: studentRepository,
+		hashGenerator:     hashGenerator,
 	}
 }
 
@@ -36,9 +39,15 @@ func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudent
 	log.Printf("Request received: %+v", req)
 
 	existingStudent, err := uc.studentRepository.FindByEmail(ctx, req.Email)
+
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		log.Printf("Error checking existing student: %v", err)
 		return fmt.Errorf("failed to check existing student: %w", err)
+	}
+
+	// verifica se a senha é válida
+	if len(req.Password) < 6 {
+		return usecaseserror.NewWeakPasswordError()
 	}
 
 	if existingStudent != nil {
@@ -47,10 +56,18 @@ func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudent
 	}
 
 	log.Printf("Creating new student")
+
+	hashedPassword, err := uc.hashGenerator.Hash(req.Password)
+
+	if err != nil {
+		log.Printf("Failed to hash password: %v", err)
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
 	newStudent := models.NewStudent(models.StudentProps{
 		Name:     req.Name,
 		Email:    req.Email,
-		Password: req.Password,
+		Password: hashedPassword,
 	})
 
 	if err := uc.studentRepository.CreateStudent(ctx, newStudent); err != nil {

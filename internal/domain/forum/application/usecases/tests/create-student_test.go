@@ -6,23 +6,22 @@ import (
 
 	usecaseserror "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/use-cases-error"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/usecases"
+	criptographymock "github.com/gabrielmatsan/forum-golang-api/utils/criptography-mock"
 	inmemoryrepositories "github.com/gabrielmatsan/forum-golang-api/utils/in-memory-repositories"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupCreateStudentTest() (*inmemoryrepositories.InMemoryStudentsRepository, *usecases.CreateStudentUseCase) {
 	studenteRepo := inmemoryrepositories.NewInMemoryStudentsRepository()
-	useCase := usecases.NewRegisterStudentUseCase(studenteRepo)
+	fakeHasher := criptographymock.FakeHasher{}
+	useCase := usecases.NewRegisterStudentUseCase(studenteRepo, &fakeHasher)
 	return studenteRepo, useCase
 }
 
 func TestCreateStudentUseCase(t *testing.T) {
-	// studenteRepo := inmemoryrepositories.NewInMemoryStudentsRepository()
-	// useCase := usecases.NewRegisterStudentUseCase(studenteRepo)
-
 	ctx := context.Background()
 
-	t.Run("should be able to register a new student", func(t *testing.T) {
+	t.Run("should be able to register a new student with hashed password", func(t *testing.T) {
 		studentRepo, useCase := setupCreateStudentTest()
 
 		request := usecases.RegisterStudentRequest{
@@ -42,7 +41,9 @@ func TestCreateStudentUseCase(t *testing.T) {
 
 		assert.Equal(t, request.Name, (*student).GetName()) // Compara os valores
 		assert.Equal(t, request.Email, (*student).GetEmail())
-		assert.Equal(t, request.Password, (*student).GetPassword())
+
+		expectedHashedPassword := "123456-hashed"
+		assert.Equal(t, expectedHashedPassword, (*student).GetPassword())
 
 		assert.NotEqual(t, "", (*student).GetID()) // Verifica se o ID foi gerado
 	})

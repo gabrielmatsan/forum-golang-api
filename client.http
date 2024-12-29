@@ -9,7 +9,7 @@ POST http://localhost:8080/students
 Content-Type: application/json
 
 {
-  "name": "John Doe",
-  "email": "gabreil@example.com",
+  "name": "John Textor",
+  "email": "john@g.com",
   "password": "securepassword123"
 }
