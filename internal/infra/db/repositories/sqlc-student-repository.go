@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"context"
+	"fmt"
+	"log"
 
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/repositories"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/enterprise/models"
@@ -19,12 +21,17 @@ func NewSQLCStudentsRepository(queries *pgstore.Queries) repositories.StudentsRe
 }
 
 func (r *SQLCStudentsRepository) CreateStudent(ctx context.Context, student *models.Student) error {
-	return r.queries.CreateStudent(ctx, pgstore.CreateStudentParams{
+	err := r.queries.CreateStudent(ctx, pgstore.CreateStudentParams{
 		ID:       uuid.MustParse(student.GetID()),
 		Name:     student.GetName(),
 		Email:    student.GetEmail(),
 		Password: student.GetPassword(),
 	})
+	if err != nil {
+		log.Printf("error creating student: %v", err)
+		return fmt.Errorf("error creating student: %w", err)
+	}
+	return nil
 }
 
 func (r *SQLCStudentsRepository) FindByEmail(ctx context.Context, email string) (*models.Student, error) {

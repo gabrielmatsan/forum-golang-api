@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/repositories"
 	usecaseserror "github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/use-cases-error"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/criptography"
@@ -21,7 +20,6 @@ type RegisterStudentRequest struct {
 }
 
 // Resposta do caso de uso: ou um erro ou o estudante criado
-type RegisterStudentResponse = entities.Either[*usecaseserror.UseCaseError, *models.Student]
 
 type CreateStudentUseCase struct {
 	studentRepository repositories.StudentsRepository
