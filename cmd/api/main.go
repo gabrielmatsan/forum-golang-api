@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/gabrielmatsan/forum-golang-api/config"
+	pgstore "github.com/gabrielmatsan/forum-golang-api/internal/infra/db/sqlc"
+	"github.com/gabrielmatsan/forum-golang-api/internal/interface/modules"
+	"github.com/gabrielmatsan/forum-golang-api/internal/interface/routes"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,7 +25,14 @@ func main() {
 
 	defer conn.Close()
 
+	db := pgstore.New(conn)
+
+	// Modulos
+	studentModule := modules.NewStudentsModule(db)
+
 	r := gin.Default() // Cria uma instância padrão do Gin
+
+	routes.RegisterStudentsRoutes(r, studentModule.CreateStudentController)
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{

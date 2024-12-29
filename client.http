@@ -1,3 +1,15 @@
 # @teste
 GET http://localhost:8080/ping
 Content-Type: application/json
+
+###
+
+# Testando a rota de criar um estudante
+POST http://localhost:8080/students
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "gabreil@example.com",
+  "password": "securepassword123"
+}

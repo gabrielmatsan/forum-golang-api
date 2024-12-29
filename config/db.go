@@ -2,17 +2,17 @@ package config
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/joho/godotenv"
 )
 
-func ConnectDB(ctx context.Context) (*sql.DB, error) {
+func ConnectDB(ctx context.Context) (*pgxpool.Pool, error) {
 	err := godotenv.Load()
 
 	if err != nil {
@@ -28,13 +28,13 @@ func ConnectDB(ctx context.Context) (*sql.DB, error) {
 		os.Getenv("POSTGRES_DB"),
 	)
 
-	db, err := sql.Open("pgx", dsn)
+	db, err := pgxpool.New(ctx, dsn)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if err := db.PingContext(ctx); err != nil {
+	if err := db.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 

@@ -2,6 +2,10 @@ package usecases
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"log"
 
 	"github.com/gabrielmatsan/forum-golang-api/internal/core/entities"
 	"github.com/gabrielmatsan/forum-golang-api/internal/domain/forum/application/repositories"
@@ -29,29 +33,31 @@ func NewRegisterStudentUseCase(studentRepository repositories.StudentsRepository
 }
 
 func (uc *CreateStudentUseCase) Execute(ctx context.Context, req RegisterStudentRequest) error {
-	existingStudent, err := uc.studentRepository.FindByEmail(ctx, req.Email)
+	log.Printf("Request received: %+v", req)
 
-	if err != nil {
-		return nil
+	existingStudent, err := uc.studentRepository.FindByEmail(ctx, req.Email)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Printf("Error checking existing student: %v", err)
+		return fmt.Errorf("failed to check existing student: %w", err)
 	}
 
 	if existingStudent != nil {
+		log.Printf("Student already exists: %+v", existingStudent)
 		return usecaseserror.NewEmailAlreadyUsedError(req.Email)
 	}
 
-	if len(req.Password) < 6 {
-		return usecaseserror.NewWeakPasswordError()
-	}
-
-	// Validar o email
-
+	log.Printf("Creating new student")
 	newStudent := models.NewStudent(models.StudentProps{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: req.Password,
 	})
 
-	uc.studentRepository.CreateStudent(ctx, newStudent)
+	if err := uc.studentRepository.CreateStudent(ctx, newStudent); err != nil {
+		log.Printf("Failed to save student: %v", err)
+		return fmt.Errorf("failed to save student: %w", err)
+	}
 
+	log.Printf("Student created successfully")
 	return nil
 }
