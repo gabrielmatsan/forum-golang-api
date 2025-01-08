@@ -8,7 +8,8 @@ import (
 )
 
 type StudentsModule struct {
-	CreateStudentController *dto.CreateStudentController
+	CreateStudentController       *dto.CreateStudentController
+	AuthenticateStudentController *dto.AuthenticateStudentController
 }
 
 func NewStudentsModule(db *sqlc.Queries, cryptoModule *CryptographyModule) *StudentsModule {
@@ -17,11 +18,14 @@ func NewStudentsModule(db *sqlc.Queries, cryptoModule *CryptographyModule) *Stud
 
 	// UseCases
 	createStudentUseCase := usecases.NewRegisterStudentUseCase(studentRepo, cryptoModule.Hasher)
+	authenticateStudentUseCase := usecases.NewAuthenticateStudentUseCase(studentRepo, cryptoModule.Hasher, cryptoModule.Encrypter)
 
 	// Controllers
 	createStudentController := dto.NewCreateStudentController(createStudentUseCase)
+	authenticateStudentController := dto.NewAuthenticateStudentController(authenticateStudentUseCase)
 
 	return &StudentsModule{
-		CreateStudentController: createStudentController,
+		CreateStudentController:       createStudentController,
+		AuthenticateStudentController: authenticateStudentController,
 	}
 }

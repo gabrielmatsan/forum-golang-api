@@ -1,71 +1,66 @@
 package cryptoinfra
 
 import (
+	"crypto/rsa"
 	"errors"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type JwtEncrypter struct {
-	secret     string
-	expiration time.Duration
+type JWTEncrypter struct {
+	privateKey *rsa.PrivateKey
+	publicKey  *rsa.PublicKey
 }
 
-func NewJwtEncrypter(secret string, expiration time.Duration) *JwtEncrypter {
-	return &JwtEncrypter{
-		secret:     secret,
-		expiration: expiration,
+// NewJWTEncrypterFromEnv carrega as chaves privada e pública de variáveis de ambiente.
+func NewJWTEncrypterFromEnv() (*JWTEncrypter, error) {
+	privateKeyContent := os.Getenv("JWT_PRIVATE_KEY")
+	if privateKeyContent == "" {
+		return nil, errors.New("missing JWT_PRIVATE_KEY environment variable")
 	}
+
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privateKeyContent))
+	if err != nil {
+		return nil, err
+	}
+
+	publicKeyContent := os.Getenv("JWT_PUBLIC_KEY")
+	if publicKeyContent == "" {
+		return nil, errors.New("missing JWT_PUBLIC_KEY environment variable")
+	}
+
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(publicKeyContent))
+	if err != nil {
+		return nil, err
+	}
+
+	return &JWTEncrypter{privateKey: privateKey, publicKey: publicKey}, nil
 }
 
-func (j *JwtEncrypter) Encrypt(payload map[string]interface{}, isRefresh bool) (string, error) {
-	claims := jwt.MapClaims{
-		"exp":  time.Now().Add(j.expiration).Unix(),
-		"iat":  time.Now().Unix(),
-		"type": "access",
-	}
+func (j *JWTEncrypter) Encrypt(payload map[string]interface{}) (string, error) {
+	claims := jwt.MapClaims(payload)
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
-	if isRefresh {
-		claims["exp"] = time.Now().Add(j.expiration * 24).Unix()
-		claims["type"] = "refresh"
-	}
-
-	for k, v := range payload {
-		claims[k] = v
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(j.secret))
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	return token.SignedString(j.privateKey)
 }
 
-func (j *JwtEncrypter) Validate(tokenString string) (map[string]interface{}, error) {
+func (j *JWTEncrypter) Validate(tokenString string) (map[string]interface{}, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, errors.New("unexpected signing method")
 		}
-		return []byte(j.secret), nil
+		return j.publicKey, nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		if claims["type"] == "refresh" {
-			// Logic for refresh token validation
-			return claims, nil
-		}
-
-		if claims["type"] == "access" {
-			// Logic for access token validation
-			return claims, nil
-		}
-
-		return nil, errors.New("invalid token type")
+		return claims, nil
 	}
+
 	return nil, errors.New("invalid token")
-}
-func (j *JwtEncrypter) GenerateRefreshToken(payload map[string]interface{}) (string, error) {
-	return j.Encrypt(payload, true) // Pass true for refresh token
 }

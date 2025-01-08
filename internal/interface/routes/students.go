@@ -7,11 +7,15 @@ import (
 
 func RegisterStudentsRoutes(
 	r *gin.Engine,
-	studentController *dto.CreateStudentController,
+	createStudentController *dto.CreateStudentController,
+	authController *dto.AuthenticateStudentController,
 ) {
-
 	studentsRoutes := r.Group("/students")
 	{
-		studentsRoutes.POST("/", studentController.Handle)
+		// Rota para criar um estudante
+		studentsRoutes.POST("/", createStudentController.Handle)
+
+		// Rota para autenticar um estudante (login)
+		studentsRoutes.POST("/login", authController.Handle)
 	}
 }

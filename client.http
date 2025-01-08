@@ -10,6 +10,20 @@ Content-Type: application/json
 
 {
   "name": "John Textor",
-  "email": "john@gf.com",
+  "email": "john@gf3.com",
   "password": "securepassword123"
 }
+
+###
+
+# Testando a rota de logar estudante
+
+POST  http://localhost:8080/students/login
+Content-Type: application/json
+
+{
+  "email": "john@gf3.com",
+  "password": "securepassword123"
+}
+
+###

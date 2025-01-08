@@ -46,22 +46,16 @@ func (uc *AuthenticateStudentUseCase) Execute(
 ) (*AuthenticateStudentResponse, error) {
 
 	student, err := uc.studentRepo.FindByEmail(ctx, req.Email)
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			log.Printf("Error checking existing student: %v", err)
 			return nil, usecaseserror.NewWrongCredentialError()
 		}
-		log.Printf("Error checking existing student: %v", err)
 		return nil, fmt.Errorf("failed to check existing student: %w", err)
 	}
 
-	if student == nil {
-		return nil, usecaseserror.NewWrongCredentialError()
-	}
+	log.Printf("Retrieved hashed password: %s", student.GetPassword())
 
-	isMatch, err := uc.hashCompare.Compare(req.Password, student.GetPassword())
-
+	isMatch, err := uc.hashCompare.Compare(student.GetPassword(), req.Password)
 	if err != nil {
 		log.Printf("Error comparing passwords: %v", err)
 		return nil, fmt.Errorf("failed to compare passwords: %w", err)
@@ -76,9 +70,7 @@ func (uc *AuthenticateStudentUseCase) Execute(
 	}
 
 	token, err := uc.encrypter.Encrypt(payload)
-
 	if err != nil {
-		log.Printf("Error generating token: %v", err)
 		return nil, fmt.Errorf("error generating token: %w", err)
 	}
 

@@ -2,6 +2,7 @@ package cryptoinfra
 
 import (
 	"errors"
+	"log"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -27,15 +28,14 @@ func (b *BCryptHasher) Hash(plain string) (string, error) {
 }
 
 func (b *BCryptHasher) Compare(hashed, plain string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword([]byte(hashed), []byte(plain))
+	log.Printf("Comparing hash: %s with plain text: %s", hashed, plain)
 
+	err := bcrypt.CompareHashAndPassword([]byte(hashed), []byte(plain))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return false, nil
 		}
-
 		return false, err
 	}
-
 	return true, nil
 }

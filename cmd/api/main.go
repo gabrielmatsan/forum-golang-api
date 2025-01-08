@@ -34,7 +34,7 @@ func main() {
 	// API Config
 	r := gin.Default()
 
-	routes.RegisterStudentsRoutes(r, studentModule.CreateStudentController)
+	routes.RegisterStudentsRoutes(r, studentModule.CreateStudentController, studentModule.AuthenticateStudentController)
 
 	// Endpoint Test (JUST IN DEVELOPMENT)
 	r.GET("/ping", func(c *gin.Context) {
